@@ -1,0 +1,150 @@
+# Ejercicio Datos Hidrologicos
+
+```{r message=FALSE}
+# Carga de graphics
+library (graphics)
+
+# Carga de ggplot2
+library(ggplot2)
+
+# Carga de plotly
+library(plotly)
+
+# Carga de dplyr
+library(dplyr)
+```
+
+## Importar datos a RStudio.
+```{r}
+inp <- read.csv("FDC.csv", na.strings="")
+
+# Visualizar encabezado y las primeras filas del archivo.
+head(inp)
+
+# Longitud: Filas y columnas hay en el archivo.
+dim(inp)
+
+# Averiguar si hay celdas vacías en el archivo.
+inp[!complete.cases(inp),]
+```
+
+## Hidrograma: Visualización de volumen de agua por tiempo en los dos ríos. 
+```{r}
+# Comparación:
+plot(inp[,2], 
+     type = 'l',
+     col = 'red',
+     xlab = 'Fecha',
+     ylab = 'Caudal mm x día')
+lines(inp[,3], 
+      col = 'green')
+```
+
+## Estadística descriptiva de series: promedio caudales diarios por 10 años.
+```{r}
+# Mínimos y máximos:
+summary(inp[,2:3])
+```
+
+## Conteo de clases de agua por día en contra de agua de caudales.
+```{r}
+# Río Estrella:
+hist(inp[,2],
+     xlab = 'Rango absoluto',
+     ylab = 'Caudal mL por día',
+     main = 'Clases de agua por día en contra de agua de caudales Río Estrella',
+     col = 'red'
+)
+# Río Banano:
+hist(inp[,3],
+  xlab = 'Rango absoluto',
+  ylab = 'Caudal mL por día',
+  main = 'Clases de agua por día en contra de agua de caudales Río Banano',
+  col = 'yellow'
+) 
+```
+
+## Asignar nombre a los ríos.
+```{r message=FALSE}
+names(inp) <- c("fecha", "Estrella", "Banano")
+
+# Demostración Río Estrella:
+names(inp) <- c("fecha", "Estrella", "Banano")
+attach(inp)
+plot(Estrella, col = 'orange')
+
+# Demostración Río Banano:
+names(inp) <- c("fecha", "Estrella", "Banano")
+attach(inp)
+plot(Banano, col = 'green')
+```
+
+## Definir el formato de fecha para la serie.
+```{r}
+Tempdate <- strptime(inp[,1], format = "%d/%m/%Y")
+```
+
+## Promedio anual del Río Estrella.
+```{r}
+# Volumen total de mL al año Río Estrella:
+MAQ_Estrella <- tapply(inp[,2], format(Tempdate, format = "%Y"), FUN = sum)
+MAQ_Estrella
+
+# Volumen total en mL al año Río Banano:
+MAQ_Banano <- tapply(inp[,3], format(Tempdate, format = "%Y"), FUN = sum)
+MAQ_Banano
+```
+
+## Exportar y guarda Río Estrella y Río Banano.
+```{r}
+# Generar directorio de trabajo:
+write.csv(rbind(MAQ_Estrella,MAQ_Banano), file = "MAQ.csv")
+```
+
+## Visualizar valores anuales de caudal.
+```{r}
+plot(MAQ_Banano,
+     ylim = c(100,3000),
+     main= 'Visualización valores anuales de caudal',
+     xlab = 'MAQ_Estrella')
+lines(MAQ_Estrella, 
+  col = "blue")
+```
+
+## Acumulado promedio mensual del Río Estrella.
+```{r}
+# Variabilidad intra anual del caudal Río Estrella:
+MMQ_Estrella <- tapply(inp[,2], format(Tempdate, format = "%m"), FUN = sum)
+MMQ_Estrella
+
+# Variabilidad intra anual del caudal Río Banano:
+MMQ_Banano <- tapply(inp[,3], format(Tempdate, format = "%m"), FUN = sum)
+MMQ_Banano
+```
+
+## Análisis de correlación: 
+```{r}
+# Observar si la cuenca del Río Estrella y el Río Banano tienen relación cuantificable.
+## Spearman: Método no paramétrico:
+corinp <- cor(inp[,2:3], method = "spearman")
+corinp
+```
+
+## Río Estrella contra el Río Banano:
+```{r}
+plot(inp[,2:3],
+     main = 'Río Estrella contra el Río Banano',
+     col  = 'red'
+)
+```  
+
+## Modelo de regresión lineal:
+```{r}
+inp.lm <- lm(inp[,2] ~ inp[,3], data = inp)
+summary(inp.lm)
+
+# Visualización:
+plot(inp.lm,
+     col = 2
+)
+```
